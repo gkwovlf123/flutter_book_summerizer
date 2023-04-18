@@ -6,7 +6,6 @@ import 'package:flutter_tts/flutter_tts.dart';
 class OCRscreen extends StatefulWidget {
   const OCRscreen({Key? key, required this.convertText}) : super(key: key);
   final List<String> convertText; //main.dart에서 OCR로 추출된 텍스트 List
-
   @override
   State<OCRscreen> createState() => _OCRscreenState();
 }

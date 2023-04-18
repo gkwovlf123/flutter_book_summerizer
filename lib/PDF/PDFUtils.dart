@@ -20,15 +20,13 @@ class PDFUtils {
     );
     if (result != null) {
       File file = File(result.files.single.path!);
-      images = await convertPDFtoImages(file.path);
-      ocrText = await performOCR(images!);
 
       isLoading = false;
       filePath.add(file.path);
       filename.add(result.names.last.toString());
 
 
-      print(ocrText.length);
+
       print("파일이름 : " + result.names.last.toString());
     }
     else if (result == null) {

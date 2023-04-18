@@ -2,6 +2,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:mypdfconverter/Image/ImageUtils.dart';
+import 'package:mypdfconverter/OCR/OCRUtils.dart';
 import 'package:mypdfconverter/PDF/PDFUtils.dart';
 import 'package:mypdfconverter/style/color_schemes.g.dart';
 import 'imgscreen.dart';
@@ -21,17 +23,17 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: lightColorScheme,
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: darkColorScheme,
-      ),
-      themeMode: ThemeMode.system,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: lightColorScheme,
+        ),
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          colorScheme: darkColorScheme,
+        ),
+        themeMode: ThemeMode.system,
 
-      home: Home()
+        home: Home()
     );
   }
 }
@@ -71,70 +73,72 @@ class _HomeState extends State<Home> {
         title: const Text('Home'),
         actions: [
           if(filePath != 'null')
-          IconButton(
-            onPressed: () {
+            IconButton(
+              onPressed: () {
 
-            },
-            icon: Icon(Icons.manage_accounts),
-          )
+              },
+              icon: Icon(Icons.manage_accounts),
+            )
         ],
       ),
       body: Center(
         child: isLoading ?
         CircularProgressIndicator() :
         ListView.builder(
-            itemCount: filename.length,
-            itemBuilder: (context, index) {
-              return GestureDetector(
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => Imgscreen(text: ocrText, images: convertimages),
-                    )
-                  );
-                },
-                child: Card(
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 100,
-                        height: 100,
-                        child: Icon(
-                            Icons.picture_as_pdf,
-                            size: 65
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Column(
-                          children: [
-                            Text(filename[index],
+          itemCount: filename.length,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () async {
 
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black,
-                              ),
-                            ),
-                            SizedBox(
-                              height: 10,
-                            ),
-                            SizedBox(
-                              width: width,
-                              child: Text(filePath[index],
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey,
-                                ),),
-                            ),
-                          ],
-                        ),
+                convertimages = await convertPDFtoImages(filePath[index]);
+                ocrText = await performOCR(convertimages);
+                Navigator.push(context, MaterialPageRoute(
+                      builder: (context) => Imgscreen(text: ocrText, images: convertimages),
+                    ),
+                  );
+              },
+              child: Card(
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 70,
+                      height: 70,
+                      child: Icon(
+                          Icons.picture_as_pdf,
+                          size: 65
                       ),
-                    ],
-                  ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Column(
+                        children: [
+                          Text(filename[index],
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          SizedBox(
+                            height: 10,
+                          ),
+                          SizedBox(
+                            width: width,
+                            child: Text(filePath[index],
+                              style: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey,
+                              ),),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.upload),
@@ -152,9 +156,7 @@ class _HomeState extends State<Home> {
           await pdfUtils.PDFpicker();
           setState(()  {
             isLoading = PDFUtils.isLoading;
-            convertimages += PDFUtils.images;
             filePath = PDFUtils.filePath;
-            ocrText += PDFUtils.ocrText;
             filename = PDFUtils.filename;
           });
 

@@ -18,30 +18,31 @@ class _ImgscreenState extends State<Imgscreen> {
         elevation: 0.0,
         title: Text('OCRscreen'),
         leading: IconButton( //뒤로가기 버튼
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: Icon(Icons.arrow_back),
         ),
         actions: [
           IconButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => OCRscreen(convertText: widget.text),
-                  )
-                );
-              },
-              icon: Icon(Icons.text_snippet),
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => OCRscreen(convertText: widget.text),
+              )
+              );
+            },
+            icon: Icon(Icons.text_snippet),
           )
         ],
       ),
       body: Center(
-        child: ListView.builder(
-          itemCount: widget.images.length,
-          itemBuilder: (context, index) {
-            return Image.memory(widget.images[index]);
-          },
-        )
+
+          child: ListView.builder(
+            itemCount: widget.images.length,
+            itemBuilder: (context, index) {
+              return Image.memory(widget.images[index]);
+            },
+          )
       ),
     );
   }
