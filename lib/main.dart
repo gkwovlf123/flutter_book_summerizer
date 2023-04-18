@@ -53,7 +53,6 @@ var date = DateTime.now();
 class _HomeState extends State<Home> {
   List<String> filePath = [];
   bool isLoading = false;
-  bool isLoading2 = true;
   List<Uint8List> convertimages = [];
   List<String> ocrText = [];
   List<String> filename = [];
