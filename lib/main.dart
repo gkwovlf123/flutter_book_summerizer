@@ -53,16 +53,22 @@ var date = DateTime.now();
 class _HomeState extends State<Home> {
   List<String> filePath = [];
   bool isLoading = false;
+  bool isLoading2 = true;
   List<Uint8List> convertimages = [];
   List<String> ocrText = [];
   List<String> filename = [];
   String now = DateFormat('yyyy mm dd hh:mm').format(date);
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-
+  Future<void> showLoadingDialog(BuildContext context) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // 다이얼로그가 닫히지 않도록 설정
+      builder: (BuildContext context) {
+        return Center(
+          child: CircularProgressIndicator(), // 인디케이터를 보여줌
+        );
+      },
+    );
   }
 
   @override
@@ -89,10 +95,11 @@ class _HomeState extends State<Home> {
           itemBuilder: (context, index) {
             return GestureDetector(
               onTap: () async {
-
+                await showLoadingDialog(context); //다이얼로그 함수
                 convertimages = await convertPDFtoImages(filePath[index]);
                 ocrText = await performOCR(convertimages);
-                Navigator.push(context, MaterialPageRoute(
+                Navigator.pop(context); //다이얼로그를 닫음
+                await Navigator.push(context, MaterialPageRoute(
                       builder: (context) => Imgscreen(text: ocrText, images: convertimages),
                     ),
                   );
