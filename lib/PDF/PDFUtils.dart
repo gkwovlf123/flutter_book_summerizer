@@ -5,6 +5,7 @@ import '../Image/ImageUtils.dart';
 import '../OCR/OCRUtils.dart';
 import 'package:intl/intl.dart';
 
+
 class PDFUtils {
   static List<String> filePath = [];
   static bool isLoading = true;

@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
-import 'package:googleapis_auth/auth.dart';
 import 'package:googleapis/vision/v1.dart' as Vis;
 import 'package:googleapis_auth/auth_io.dart';
-import 'package:mypdfconverter/PDF/PDFUtils.dart';
+
 
 Future<List<String>> performOCR(List<Uint8List> images) async {
   // Set up authentication credentials

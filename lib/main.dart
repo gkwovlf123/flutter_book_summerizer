@@ -7,8 +7,11 @@ import 'package:mypdfconverter/OCR/OCRUtils.dart';
 import 'package:mypdfconverter/PDF/PDFUtils.dart';
 import 'package:mypdfconverter/style/color_schemes.g.dart';
 import 'imgscreen.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -24,12 +27,14 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
         theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: lightColorScheme,
+            useMaterial3: true,
+            colorScheme: ColorScheme.fromSeed(
+                seedColor: lightColorScheme.primary, brightness: Brightness.light)
         ),
         darkTheme: ThemeData(
           useMaterial3: true,
-          colorScheme: darkColorScheme,
+          colorScheme: ColorScheme.fromSeed(
+              seedColor: darkColorScheme.primary, brightness: Brightness.dark),
         ),
         themeMode: ThemeMode.system,
 
@@ -86,68 +91,77 @@ class _HomeState extends State<Home> {
             )
         ],
       ),
-      body: Center(
-        child: isLoading ?
-        CircularProgressIndicator() :
-        ListView.builder(
-          itemCount: filename.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () async {
-                await showLoadingDialog(context); //다이얼로그 함수
-                convertimages = await convertPDFtoImages(filePath[index]);
-                ocrText = await performOCR(convertimages);
-                Navigator.pop(context); //다이얼로그를 닫음
-                await Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => Imgscreen(text: ocrText, images: convertimages),
-                    ),
-                  );
-              },
-              child: Card(
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 70,
-                      height: 70,
-                      child: Icon(
-                          Icons.picture_as_pdf,
-                          size: 65
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Divider(),
+          Expanded(
+            child: Center(
+              child: isLoading ?
+              CircularProgressIndicator(backgroundColor: lightColorScheme.primaryContainer,) :
+              ListView.builder(
+                itemCount: filename.length,
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () async {
+                      showLoadingDialog(context); //다이얼로그 함수
+                      convertimages = await convertPDFtoImages(filePath[index]);
+                      ocrText = await performOCR(convertimages);
+                      Navigator.pop(context); //다이얼로그를 닫음
+                      await Navigator.push(context, MaterialPageRoute(
+                        builder: (context) => Imgscreen(text: ocrText, images: convertimages),
                       ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Column(
+                      );
+                    },
+                    child: Card(
+                      child: Row(
                         children: [
-                          Text(filename[index],
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                          SizedBox(
+                            width: 70,
+                            height: 70,
+                            child: Icon(
+                                Icons.picture_as_pdf,
+                                size: 65
                             ),
                           ),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          SizedBox(
-                            width: width,
-                            child: Text(filePath[index],
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Colors.grey,
-                              ),),
+                          Padding(
+                            padding: EdgeInsets.all(10),
+                            child: Column(
+                              children: [
+                                Text(filename[index],
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                SizedBox(
+                                  width: width,
+                                  child: Text(filePath[index],
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.grey,
+                                    ),),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         icon: const Icon(Icons.upload),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         onPressed: () async {
           PDFUtils pdfUtils = PDFUtils();
           setState(() {
