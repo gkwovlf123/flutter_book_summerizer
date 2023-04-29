@@ -44,7 +44,9 @@ dependencies:
   intl:
   cloud_firestore:
   firebase_core:
-
+  firebase_storage:
+  device_info_plus:
+  pdf:
 dev_dependencies:
   flutter_test:
     sdk: flutter
