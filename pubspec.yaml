@@ -37,6 +37,8 @@ dependencies:
   cupertino_icons:
   file_picker:
   native_pdf_renderer:
+  flutter_cached_pdfview:
+  native_pdf_view:
   path_provider:
   googleapis_auth:
   googleapis:

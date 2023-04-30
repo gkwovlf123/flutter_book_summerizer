@@ -8,6 +8,7 @@ import 'package:mypdfconverter/PDF/PDFUtils.dart';
 import 'package:mypdfconverter/style/color_schemes.g.dart';
 import 'imgscreen.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,7 +54,7 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 
 }
-var date = DateTime.now();
+
 
 class _HomeState extends State<Home> {
   List<String> filePath = [];
@@ -61,7 +62,9 @@ class _HomeState extends State<Home> {
   List<Uint8List> convertimages = [];
   List<String> ocrText = [];
   List<String> filename = [];
-  String now = DateFormat('yyyy mm dd hh:mm').format(date);
+
+
+
 
   Future<void> showLoadingDialog(BuildContext context) async {
     return showDialog<void>(
@@ -69,11 +72,13 @@ class _HomeState extends State<Home> {
       barrierDismissible: false, // 다이얼로그가 닫히지 않도록 설정
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(), // 인디케이터를 보여줌
+          child: CircularProgressIndicator(backgroundColor: lightColorScheme.primaryContainer,), // 인디케이터를 보여줌
         );
       },
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +87,6 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         title: const Text('Home'),
         actions: [
-          if(filePath != 'null')
             IconButton(
               onPressed: () {
 
@@ -96,65 +100,66 @@ class _HomeState extends State<Home> {
         children: [
           Divider(),
           Expanded(
-            child: Center(
-              child: isLoading ?
-              CircularProgressIndicator(backgroundColor: lightColorScheme.primaryContainer,) :
-              ListView.builder(
-                itemCount: filename.length,
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () async {
-                      showLoadingDialog(context); //다이얼로그 함수
-                      convertimages = await convertPDFtoImages(filePath[index]);
-                      ocrText = await performOCR(convertimages);
-                      Navigator.pop(context); //다이얼로그를 닫음
-                      await Navigator.push(context, MaterialPageRoute(
-                        builder: (context) => Imgscreen(text: ocrText, images: convertimages),
-                      ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('pdfs').orderBy('Create time', descending: true).snapshots(),
+              builder: (context, snapshot) {
+                if(snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator(backgroundColor: lightColorScheme.primaryContainer,);
+                }
+                return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: snapshot.data?.docs.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () async {
+                            String? docId = snapshot.data?.docs[index].id;
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                              builder: (context) => Imgscreen(docId: docId),
+                            ),
+                          );
+                        },
+                        child: Card(
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                child: Image.network(snapshot.data?.docs[index]['Titleimg'],
+                                  width: 70,
+                                  height: 70,
+                                )
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(snapshot.data?.docs[index]['PDFname'],
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    Text(snapshot.data?.docs[index]['Create time'],
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       );
                     },
-                    child: Card(
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 70,
-                            height: 70,
-                            child: Icon(
-                                Icons.picture_as_pdf,
-                                size: 65
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(10),
-                            child: Column(
-                              children: [
-                                Text(filename[index],
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 10,
-                                ),
-                                SizedBox(
-                                  width: width,
-                                  child: Text(filePath[index],
-                                    style: TextStyle(
-                                      fontSize: 15,
-                                      color: Colors.grey,
-                                    ),),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -164,23 +169,9 @@ class _HomeState extends State<Home> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         onPressed: () async {
           PDFUtils pdfUtils = PDFUtils();
-          setState(() {
-            if(PDFUtils.isLoading == false) {
-              PDFUtils.isLoading = true;
-              isLoading = PDFUtils.isLoading;
-            }
-            else {
-              isLoading = PDFUtils.isLoading;
-            }
-          });
+          showLoadingDialog(context);
           await pdfUtils.PDFpicker();
-          setState(()  {
-            isLoading = PDFUtils.isLoading;
-            filePath = PDFUtils.filePath;
-            filename = PDFUtils.filename;
-          });
-
-
+          Navigator.pop(context);
         },
         label: const Text('upload'),
       ),

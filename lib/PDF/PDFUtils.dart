@@ -5,30 +5,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:intl/intl.dart';
 import '../Image/ImageUtils.dart';
 import '../OCR/OCRUtils.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 
-
+var date = DateTime.now();
 class PDFUtils {
-  static List<String> filePath = [];
-  static bool isLoading = true;
-  static List<Uint8List> images = [];
-  static List<String> ocrText = [];
-  static List<String> filename = [];
+  List<String> filePath = [];
+  List<Uint8List> images = [];
+  List<String> ocrText = [];
+  List<String> filename = [];
+  late Uint8List img;
   String pdfName = '';
+  String now = DateFormat('yyyy-MM-dd HH:mm').format(date);
 
-
-  Future<void> createDoc(String? name, String path, String text, String url) async { //firebase create
+  Future<void> createDoc(String? name, String path, String url, String imgurl, String jsonurl) async { //firebase create
     FirebaseFirestore.instance.collection('pdfs').add({
       'PDFname': name,
       'PDFpath': path,
       'PDFimgUrl': url,
-      'Create time': Timestamp.now(),
+      'Titleimg': imgurl,
+      'Create time': now,
       'Deviceid': await getDeviceId(),
-      'OCRtext': text,
+      'Jsonurl': jsonurl,
     });
   }
 
@@ -44,6 +45,7 @@ class PDFUtils {
     final filePath = '${directory.path}/$title.pdf';
     return File(filePath).writeAsBytes(await pdf.save());
   }
+
 
   Future<String?> getDeviceId() async { //디바이스 uid 가져오는 함수
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
@@ -69,31 +71,42 @@ class PDFUtils {
     if (result != null) {
       File file = File(result.files.single.path!);
 
-      isLoading = false;
       filePath.add(file.path);
       filename.add(result.names.last.toString());
       pdfName = result.names.last.toString();
+
       images = await convertPDFtoImages(file.path);
       ocrText = await performOCR(images!);
+
+      img = images[0].buffer.asUint8List();
 
       Map<String, List<String>> data = {
         'ocrText': ocrText,
       };
       String jsonString = jsonEncode(data); //ocr텍스트 json 변환
+      final bytes = utf8.encode(jsonString);
+
+      final jsondirectory = await getTemporaryDirectory();
+      final jsonfilePath = '${jsondirectory.path}/$filename.json';
+      File jsonfile = File(jsonfilePath);
+      await jsonfile.writeAsBytes(bytes);
 
       File pdfFile = await convertImagesToPDF(pdfName, images); //List<Uint8List> 타입 images를 File타입으로 변환
 
       final ref = FirebaseStorage.instance.ref().child('$pdfName');
+      final ref2 = FirebaseStorage.instance.ref().child('$pdfName.jpg');
+      final ref3 = FirebaseStorage.instance.ref().child('$pdfName.json');
       TaskSnapshot snapshot = await ref.putFile(pdfFile); //pdf명으로 파일 업로드
-      final url = await ref.getDownloadURL(); //url 변수에 업로드한 파일의 다운로드 url을 할당
+      TaskSnapshot snapshot2 = await ref2.putData(img);
+      TaskSnapshot snapshot3 = await ref3.putFile(jsonfile);
+      final jsonurl = await ref3.getDownloadURL();
+      final titleimg = await ref2.getDownloadURL();
+      final pdfurl = await ref.getDownloadURL(); //url 변수에 업로드한 파일의 다운로드 url을 할당
 
-      createDoc(pdfName, file.path, jsonString, url); //pdf이름, 경로, 변환된 텍스트, 다운로드 url, 등록 시간을 firebase에 업로드
+      createDoc(pdfName, file.path, pdfurl, titleimg, jsonurl); //pdf이름, 경로, 변환된 텍스트, 다운로드 url, 등록 시간을 firebase에 업로드
 
       print("파일이름 : " + result.names.last.toString());
 
-    }
-    else if (result == null) {
-      isLoading = false;
     }
   }
 }
