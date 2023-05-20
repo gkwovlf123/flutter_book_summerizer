@@ -1,12 +1,12 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cached_pdfview/flutter_cached_pdfview.dart';
 import 'package:mypdfconverter/ocrscreen.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mypdfconverter/style/color_schemes.g.dart';
-import 'package:native_pdf_renderer/native_pdf_renderer.dart';
+import 'package:http/http.dart' as http;
+import 'package:mypdfconverter/server/serverUtils.dart';
 
 class Imgscreen extends StatefulWidget {
   const Imgscreen({Key? key, required this.docId}) : super(key: key);
@@ -17,19 +17,10 @@ class Imgscreen extends StatefulWidget {
 }
 class _ImgscreenState extends State<Imgscreen> {
   late Future<Uint8List> pdfFuture;
-  String OCRtext = '';
+  String OCRurl = '';
   String pdfUrl = '';
-  Future<void> showLoadingDialog(BuildContext context) async {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false, // 다이얼로그가 닫히지 않도록 설정
-      builder: (BuildContext context) {
-        return Center(
-          child: CircularProgressIndicator(backgroundColor: lightColorScheme.primaryContainer,), // 인디케이터를 보여줌
-        );
-      },
-    );
-  }
+  Server server = Server();
+
   @override
   void initState() {
     // TODO: implement initState
@@ -44,7 +35,7 @@ class _ImgscreenState extends State<Imgscreen> {
         .get();
 
     // PDF 파일의 URL을 가져와서 Uint8List 형식으로 변환합니다.
-    OCRtext = doc.get('Jsonurl');
+    OCRurl = doc.get('Sumjsonurl');
     pdfUrl = doc.get('PDFimgUrl');
     Uint8List pdfBytes = (await NetworkAssetBundle(Uri.parse(pdfUrl)).load('')).buffer.asUint8List();
 
@@ -66,11 +57,10 @@ class _ImgscreenState extends State<Imgscreen> {
         actions: [
           IconButton(
             onPressed: () {
-              /*Navigator.push(context, MaterialPageRoute(
-                builder: (context) => OCRscreen(convertText: OCRtext),
+              Navigator.push(context, MaterialPageRoute(
+                builder: (context) => OCRscreen(OCRurl: OCRurl),
               )
-              );*/
-              print(OCRtext);
+              );
             },
             icon: Icon(Icons.text_snippet),
           )

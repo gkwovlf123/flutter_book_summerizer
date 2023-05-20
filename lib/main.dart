@@ -1,15 +1,11 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:mypdfconverter/Image/ImageUtils.dart';
-import 'package:mypdfconverter/OCR/OCRUtils.dart';
 import 'package:mypdfconverter/PDF/PDFUtils.dart';
 import 'package:mypdfconverter/style/color_schemes.g.dart';
 import 'imgscreen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -72,7 +68,7 @@ class _HomeState extends State<Home> {
       barrierDismissible: false, // 다이얼로그가 닫히지 않도록 설정
       builder: (BuildContext context) {
         return Center(
-          child: CircularProgressIndicator(backgroundColor: lightColorScheme.primaryContainer,), // 인디케이터를 보여줌
+          child: CircularProgressIndicator(), // 인디케이터를 보여줌
         );
       },
     );
@@ -99,14 +95,18 @@ class _HomeState extends State<Home> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Divider(),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('pdfs').orderBy('Create time', descending: true).snapshots(),
-              builder: (context, snapshot) {
-                if(snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator(backgroundColor: lightColorScheme.primaryContainer,);
-                }
-                return ListView.builder(
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('pdfs').orderBy('Create time', descending: true).snapshots(),
+            builder: (context, snapshot) {
+              if(snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child:CircularProgressIndicator());
+              }
+              return RawScrollbar(
+                thumbColor: Theme.of(context).colorScheme.secondary,
+                thickness: 6.0, // 스크롤 너비
+                radius: const Radius.circular(20.0), // 스크롤 라운딩
+                isAlwaysShown: false,
+                child: ListView.builder(
                     shrinkWrap: true,
                     itemCount: snapshot.data?.docs.length,
                     itemBuilder: (context, index) {
@@ -134,22 +134,29 @@ class _HomeState extends State<Home> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(snapshot.data?.docs[index]['PDFname'],
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
+                                    SizedBox(
+                                      child: Text(
+                                        snapshot.data?.docs[index]['PDFname'] /*끝에 ?? '' 입력하면 null이면 ?? 뒤의 문자로 대체함*/,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
+                                      width: width,
                                     ),
                                     SizedBox(
                                       height: 10,
                                     ),
-                                    Text(snapshot.data?.docs[index]['Create time'],
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
+                                    SizedBox(
+                                      child: Text(snapshot.data?.docs[index]['Create time'],
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                          ),
+                                        overflow: TextOverflow.ellipsis,
                                         ),
-                                      ),
+                                      width: width,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -158,13 +165,14 @@ class _HomeState extends State<Home> {
                         ),
                       );
                     },
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        elevation: 2.0,
         icon: const Icon(Icons.upload),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         onPressed: () async {

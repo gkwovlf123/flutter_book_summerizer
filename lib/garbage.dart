@@ -1,9 +1,4 @@
-import 'dart:typed_data';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:mypdfconverter/PDF/PDFUtils.dart';
-import 'package:mypdfconverter/style/color_schemes.g.dart';
-import 'imgscreen.dart';
+
 /*
 void main() {
   runApp(MyApp());

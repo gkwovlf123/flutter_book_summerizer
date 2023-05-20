@@ -49,6 +49,8 @@ dependencies:
   firebase_storage:
   device_info_plus:
   pdf:
+  scrollable_positioned_list:
+  dio:
 dev_dependencies:
   flutter_test:
     sdk: flutter

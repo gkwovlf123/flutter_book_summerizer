@@ -3,8 +3,6 @@ import 'dart:io';
 import 'package:native_pdf_renderer/native_pdf_renderer.dart';
 
 
-
-
 Future<List<Uint8List>> convertPDFtoImages(String path) async {
   final file = File(path);
   final document = await PdfDocument.openFile(file.path);

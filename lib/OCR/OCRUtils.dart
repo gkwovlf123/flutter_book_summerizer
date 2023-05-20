@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
@@ -13,8 +14,10 @@ Future<List<String>> performOCR(List<Uint8List> images) async {
     Vis.VisionApi.cloudVisionScope,
   ]);
   final vision = Vis.VisionApi(client);
-  int num = 0;
-  final List<String> texts = [];
+
+  // 비동기 작업 리스트
+  final List<Future<String>> ocrFutures = [];
+
   for (final image in images) {
     final inputImage = Vis.Image();
     inputImage.contentAsBytes = image;
@@ -25,13 +28,20 @@ Future<List<String>> performOCR(List<Uint8List> images) async {
     request.features = [feature];
     final batchRequest = Vis.BatchAnnotateImagesRequest();
     batchRequest.requests = [request];
-    final response = await vision.images.annotate(batchRequest);
-    final annotation = response.responses!.first.fullTextAnnotation!;
-    //
-    final text = annotation.text!;
-    //num += text.length;
-    //print(num);
-    texts.add(text);
+
+    // OCR 작업을 Future로 래핑하여 리스트에 추가
+    final ocrFuture = vision.images.annotate(batchRequest)
+        .then((response) {
+      final annotation = response.responses!.first.fullTextAnnotation!;
+      final text = annotation.text!;
+      return text;
+    });
+
+    ocrFutures.add(ocrFuture);
   }
+
+  // 병렬로 모든 OCR 작업을 실행하고 결과를 기다림
+  final List<String> texts = await Future.wait(ocrFutures);
+
   return texts;
 }
