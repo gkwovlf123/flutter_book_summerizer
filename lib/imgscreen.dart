@@ -9,17 +9,14 @@ import 'package:http/http.dart' as http;
 import 'package:mypdfconverter/server/serverUtils.dart';
 
 class Imgscreen extends StatefulWidget {
-  const Imgscreen({Key? key, required this.docId}) : super(key: key);
-  final docId;
+  const Imgscreen({Key? key, required this.pdfurl}) : super(key: key);
+  final String pdfurl;
 
   @override
   State<Imgscreen> createState() => _ImgscreenState();
 }
 class _ImgscreenState extends State<Imgscreen> {
   late Future<Uint8List> pdfFuture;
-  String OCRurl = '';
-  String pdfUrl = '';
-  Server server = Server();
 
   @override
   void initState() {
@@ -29,15 +26,8 @@ class _ImgscreenState extends State<Imgscreen> {
   }
 
   Future<Uint8List> _fetchPDF() async {
-    DocumentSnapshot doc = await FirebaseFirestore.instance
-        .collection('pdfs')
-        .doc(widget.docId)
-        .get();
 
-    // PDF 파일의 URL을 가져와서 Uint8List 형식으로 변환합니다.
-    OCRurl = doc.get('Sumjsonurl');
-    pdfUrl = doc.get('PDFimgUrl');
-    Uint8List pdfBytes = (await NetworkAssetBundle(Uri.parse(pdfUrl)).load('')).buffer.asUint8List();
+    Uint8List pdfBytes = (await NetworkAssetBundle(Uri.parse(widget.pdfurl)).load('')).buffer.asUint8List();
 
     return pdfBytes;
   }
@@ -54,17 +44,6 @@ class _ImgscreenState extends State<Imgscreen> {
           },
           icon: Icon(Icons.arrow_back),
         ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) => OCRscreen(OCRurl: OCRurl),
-              )
-              );
-            },
-            icon: Icon(Icons.text_snippet),
-          )
-        ],
       ),
       body: Center(
           child: FutureBuilder<Uint8List>(
@@ -73,7 +52,7 @@ class _ImgscreenState extends State<Imgscreen> {
               if (snapshot.connectionState == ConnectionState.done) {
                 if (snapshot.hasData) {
                   return PDF().cachedFromUrl(
-                    pdfUrl,
+                    widget.pdfurl,
                     placeholder: (progress) => Center(child: CircularProgressIndicator()),
                     errorWidget: (error) => Center(child: Text('Failed to load PDF')),
                   );

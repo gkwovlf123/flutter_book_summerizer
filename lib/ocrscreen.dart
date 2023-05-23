@@ -185,7 +185,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                               )
                                           ),
                                           TextSpan(
-                                              text: ', 예시',
+                                              text: ', 페이지',
                                               style: TextStyle(
                                                   fontSize: 15.0,
                                                   fontWeight: FontWeight.w500,
@@ -232,7 +232,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                                   ),
                                               ),
                                               TextSpan(
-                                                  text: ', 예시',
+                                                  text: ', 페이지',
                                                   style: TextStyle(
                                                       fontSize: 20.0,
                                                       fontWeight: FontWeight.w700,

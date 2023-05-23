@@ -8,8 +8,7 @@ Future<List<Uint8List>> convertPDFtoImages(String path) async {
   final document = await PdfDocument.openFile(file.path);
   final pageCount = document.pagesCount;
   final List<Uint8List> images = [];
-  //print('device id = ${await getDeviceId()}'); //기기 uid
-  
+
 
   for (int i = 0; i < pageCount; i++) {
     final page = await document.getPage(i + 1);
@@ -22,7 +21,7 @@ Future<List<Uint8List>> convertPDFtoImages(String path) async {
     images.add(imageData!);
     await page.close();
   }
-  
+
 
   await document.close();
   return images;
