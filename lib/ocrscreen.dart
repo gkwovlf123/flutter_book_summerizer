@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:mypdfconverter/server/serverUtils.dart';
+import 'package:mypdfconverter/ttsplayer.dart';
 
 class OCRscreen extends StatefulWidget {
   const OCRscreen({Key? key, required this.OCRurl}) : super(key: key);
@@ -20,16 +21,9 @@ class _OCRscreenState extends State<OCRscreen> {
   double volume = 1.0;
   double pitch = 1.0;
   double rate = 0.5;
+
   final ItemScrollController itemScrollController = ItemScrollController();
   final ItemScrollController itemScrollController2 = ItemScrollController();
-
-  void _scrollToTop() {
-    itemScrollController.scrollTo(
-      index: 0,
-      duration: Duration(milliseconds: 500), // 애니메이션 지속 시간 설정
-      curve: Curves.ease, // 애니메이션 커브 설정 (옵션)
-    );
-  }
 
   void scrollToItem(int index) {
     itemScrollController.scrollTo(
@@ -39,27 +33,9 @@ class _OCRscreenState extends State<OCRscreen> {
     );
   }
 
-  void showSummaryBottomSheet(BuildContext context, String summaryText) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          constraints: BoxConstraints(
-            minHeight: 100,
-            maxHeight: MediaQuery.of(context).size.height * 0.8,
-          ),
-          child: SingleChildScrollView(
-            child: Center(
-              child: Text(
-                summaryText,
-                style: TextStyle(fontSize: 18),
-              ),
-            ),
-          ),
-        );
-      },
-    );
+  List<String> convertListToString(List<dynamic> dataList) {
+    List<String> stringList = dataList.map((item) => item.toString()).toList();
+    return stringList;
   }
 
   Future<dynamic> jsonParse(String jsonUrl) async {
@@ -134,7 +110,7 @@ class _OCRscreenState extends State<OCRscreen> {
                   child: ScrollablePositionedList.builder(
                     itemScrollController: itemScrollController2,
                     scrollDirection: Axis.horizontal,
-                    itemCount: ocrjson['summary'].length,
+                    itemCount: ocrjson[1]['extract'].length,
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () async {
@@ -177,7 +153,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                       TextSpan(
                                         children: [
                                           TextSpan(
-                                              text: '$index',
+                                              text: '$index. ',
                                               style: TextStyle(
                                                   fontSize: 20.0,
                                                   fontWeight: FontWeight.w700,
@@ -185,7 +161,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                               )
                                           ),
                                           TextSpan(
-                                              text: ', 페이지',
+                                              text: ocrjson[1]['extract'][index].toString().replaceAll('[', '').replaceAll(']', ""),
                                               style: TextStyle(
                                                   fontSize: 15.0,
                                                   fontWeight: FontWeight.w500,
@@ -209,7 +185,7 @@ class _OCRscreenState extends State<OCRscreen> {
                   child: Expanded(
                     child: ScrollablePositionedList.builder(
                       itemScrollController: itemScrollController,
-                      itemCount: ocrjson['summary'].length,
+                      itemCount: ocrjson[0]['output'].length,
                       itemBuilder: (BuildContext context, int index) {
                         return Column(
                           children: [
@@ -224,7 +200,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                           TextSpan(
                                             children: [
                                               TextSpan(
-                                                  text: '$index',
+                                                  text: '$index. ',
                                                   style: TextStyle(
                                                       fontSize: 30.0,
                                                       fontWeight: FontWeight.w900,
@@ -232,7 +208,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                                   ),
                                               ),
                                               TextSpan(
-                                                  text: ', 페이지',
+                                                  text: ocrjson[1]['extract'][index].toString().replaceAll('[', '').replaceAll(']', ''),
                                                   style: TextStyle(
                                                       fontSize: 20.0,
                                                       fontWeight: FontWeight.w700,
@@ -267,18 +243,16 @@ class _OCRscreenState extends State<OCRscreen> {
                                         width: double.infinity,
                                         child: ListTile(
                                           title: Text(
-                                            ocrjson['summary'][index][0].toString(),
+                                            ocrjson[0]['output'][index].join('\n\n').toString(),
                                             style: TextStyle(
                                                 color: Theme.of(context).colorScheme.onBackground
                                             ),
                                           ),
                                           onTap: () async {
-                                            print(ocrjson['summary'][index].toString());
-                                            await speak('$index번째 페이지를 읽겠습니다 ${ocrjson['summary'][index][0]}');
+                                            print(ocrjson[0]['output'][index].toString());
+                                            await speak('$index번째 페이지를 읽겠습니다 ${ocrjson[0]['output'][index]}');
                                           },
                                           onLongPress: () async {
-
-                                            //showSummaryBottomSheet(context, 'BottomSheet'); // 초기 빈 문자열로 BottomSheet를 표시
 
                                           },
 
@@ -302,13 +276,13 @@ class _OCRscreenState extends State<OCRscreen> {
       ),
       floatingActionButton: GestureDetector(
         onLongPress: () {
-          _scrollToTop();
+          showTTSplayer(context, ocrjson[0]['output']);
         },
         child: FloatingActionButton.extended( //플로팅 액션 버튼
           onPressed: () async {
-            await speak('위로 이동');
+            await speak('음성 플레이어');
           },
-          label: Text('위로 이동',
+          label: Text('음성 플레이어',
             style: TextStyle(
               color: Theme.of(context).colorScheme.surface
             ),

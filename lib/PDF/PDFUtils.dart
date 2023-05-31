@@ -98,6 +98,7 @@ class PDFUtils {
       final sumjsonfilePath = '${jsondirectory.path}/(요약)$filename.json';
       final refinejsonfilePath = '${jsondirectory.path}/(가공)$filename.json';
 
+
       //임시 파일을 실제 파일과 매핑
       File jsonfile = File(jsonfilePath);
       File sumjsonfile = File(sumjsonfilePath);
