@@ -2,14 +2,15 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mypdfconverter/PDF/PDFUtils.dart';
+import 'package:mypdfconverter/stt.dart';
 import 'package:mypdfconverter/style/color_schemes.g.dart';
-import 'imgscreen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'dart:io';
-
+import 'package:mypdfconverter/TTS/tts.dart';
 import 'menu.dart';
+import 'option.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -59,6 +60,7 @@ class Home extends StatefulWidget {
 
 
 class _HomeState extends State<Home>  {
+  TTS tts = TTS();
   List<String> filePath = [];
   bool isLoading = false;
   List<Uint8List> convertimages = [];
@@ -97,11 +99,17 @@ class _HomeState extends State<Home>  {
   @override
   void initState() {
     deviceIdFuture = getDeviceId();
+    tts.initTts();
     super.initState();
 
   }
 
+  @override
+  void dispose() { //음성을 듣다가 화면을 빠져나오면 TTS가 중단되는 함수
+    super.dispose();
+    tts.flutterTts.stop();
 
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,12 +120,32 @@ class _HomeState extends State<Home>  {
           appBar: AppBar(
             title: const Text('Home'),
             actions: [
-                IconButton(
-                  onPressed: () {
-
+                GestureDetector(
+                  onLongPress: () {
+                    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                      return Option();
+                    },));
                   },
-                  icon: Icon(Icons.manage_accounts),
-                )
+                  child: IconButton(
+                    onPressed: () {
+                      tts.speak('환경설정');
+                    },
+                    icon: Icon(Icons.manage_accounts),
+                  ),
+                ),
+              /*GestureDetector(
+                onLongPress: () {
+                  Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+                    return SttPage();
+                  },));
+                },
+                child: IconButton(
+                  onPressed: () {
+                    tts.speak('STT');
+                  },
+                  icon: Icon(Icons.mic),
+                ),
+              ),*/
             ],
           ),
           body: TabBarView(
@@ -148,7 +176,7 @@ class _HomeState extends State<Home>  {
                             itemCount: snapshot.data?.docs.length,
                             itemBuilder: (context, index) {
                               return GestureDetector(
-                                onTap: () async {
+                                onLongPress: () async {
                                     String? docId = snapshot.data?.docs[index].id;
                                     await Navigator.push(
                                       context,
@@ -157,13 +185,16 @@ class _HomeState extends State<Home>  {
                                     ),
                                   );
                                 },
+                                onTap: () {
+                                  tts.speak(snapshot.data?.docs[index]['PDFname']);
+                                },
                                 child: GestureDetector(
-                                  onLongPress: () {
+                                  onDoubleTap: () {
                                     FirebaseFirestore.instance
                                         .collection('pdfs')
                                         .doc(snapshot.data?.docs[index].id) // 업데이트할 문서의 ID를 지정
                                         .update({'favorite': true}); // 필드 값을 업데이트
-                                    print('즐겨찾기 등록 완료');
+                                    tts.speak('즐겨찾기 등록 완료');
 
                                   },
                                   child: Card(
@@ -261,7 +292,7 @@ class _HomeState extends State<Home>  {
                             itemCount: snapshot.data?.docs.length,
                             itemBuilder: (context, index) {
                               return GestureDetector(
-                                onTap: () async {
+                                onLongPress: () async {
                                   String? docId = snapshot.data?.docs[index].id;
                                   await Navigator.push(
                                     context,
@@ -271,12 +302,15 @@ class _HomeState extends State<Home>  {
                                   );
                                 },
                                 child: GestureDetector(
-                                  onLongPress: () {
+                                  onTap: () {
+                                    tts.speak(snapshot.data?.docs[index]['PDFname']);
+                                  },
+                                  onDoubleTap: () {
                                     FirebaseFirestore.instance
                                         .collection('pdfs')
                                         .doc(snapshot.data?.docs[index].id) // 업데이트할 문서의 ID를 지정
                                         .update({'favorite': false}); // 필드 값을 업데이트
-                                    print('즐겨찾기 삭제 완료');
+                                    tts.speak('즐겨찾기 삭제 완료');
 
                                   },
                                   child: Card(
@@ -367,29 +401,44 @@ class _HomeState extends State<Home>  {
                   fontSize: 13,
                 ),
                 tabs: [
-                  Tab(
-                    icon: Icon(Icons.home_outlined),
-                    text: '메인화면',
+                  GestureDetector(
+                    onDoubleTap: () {
+                      tts.speak('메인화면');
+                    },
+                    child: Tab(
+                      icon: Icon(Icons.home_outlined),
+                      text: '메인화면',
+                    ),
                   ),
-                  Tab(
-                    icon: Icon(Icons.star),
-                    text: '즐겨찾기',
+                  GestureDetector(
+                    onDoubleTap: () {
+                      tts.speak('즐겨찾기');
+                    },
+                    child: Tab(
+                      icon: Icon(Icons.star),
+                      text: '즐겨찾기',
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            elevation: 2.0,
-            icon: const Icon(Icons.upload),
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            onPressed: () async {
+          floatingActionButton: GestureDetector(
+            onLongPress: () async {
               PDFUtils pdfUtils = PDFUtils();
               showLoadingDialog(context);
               await pdfUtils.PDFpicker();
               Navigator.pop(context);
             },
-            label: const Text('upload'),
+            child: FloatingActionButton.extended(
+              elevation: 2.0,
+              icon: const Icon(Icons.upload),
+              backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+              onPressed: () async {
+                tts.speak('업로드');
+              },
+              label: const Text('업로드'),
+            ),
           ),
         ),
     );

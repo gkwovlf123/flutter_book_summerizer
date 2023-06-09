@@ -51,6 +51,7 @@ dependencies:
   pdf:
   scrollable_positioned_list:
   dio:
+  speech_to_text:
 dev_dependencies:
   flutter_test:
     sdk: flutter

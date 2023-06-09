@@ -26,7 +26,7 @@ class PDFUtils {
   Server server = Server(); // 서버 통신 객체
 
   //파이어베이스 업로드 함수
-  Future<void> createDoc(String? name, String path, String url, String imgurl, String jsonurl, String sumjsonurl, String refinejsonurl) async {
+  Future<void> createDoc(String? name, String path, String url, String imgurl, String jsonurl, String sumjsonurl, String refinejsonurl, String extractjsonurl) async {
     FirebaseFirestore.instance.collection('pdfs').add({
       'PDFname': name, // pdf 이름
       'PDFpath': path, // pdf 경로
@@ -37,6 +37,7 @@ class PDFUtils {
       'Jsonurl': jsonurl, // ocr 텍스트 다운로드 url
       'Sumjsonurl': sumjsonurl, // 요약 텍스트 다운로드 url
       'Refinejsonurl': refinejsonurl, // 정제된 텍스트 다운로드 url
+      'Extractjsonurl' : extractjsonurl,
       'favorite': false, // 즐겨찾기, 기본 false
     });
   }
@@ -81,33 +82,39 @@ class PDFUtils {
       print('요약완료');
       final refineData = await server.postrefineData(ocrText); // ocrtext를 서버로 보내서 읽기 쉬운 형태로 재정리
       print('정리완료');
+      final extractData = await server.postextractData(ocrText);
+      print('목차추출완료');
 
       //텍스트 json 인코딩
       String refineString = jsonEncode(refineData);
       String sumString = jsonEncode(summaryData);
+      String extractString = jsonEncode(extractData);
       String jsonString = jsonEncode(data);
 
       //텍스트 utf8 포맷으로 인코딩
       final bytes = utf8.encode(jsonString);
       final sumbytes = utf8.encode(sumString);
       final refinebytes = utf8.encode(refineString);
+      final extractbytes = utf8.encode(extractString);
 
       //db로 업로드 하기전에 업로드 할 파일을 이름을 지정해서 임시 디렉토리에 보관
       final jsondirectory = await getTemporaryDirectory();
       final jsonfilePath = '${jsondirectory.path}/$filename.json';
       final sumjsonfilePath = '${jsondirectory.path}/(요약)$filename.json';
       final refinejsonfilePath = '${jsondirectory.path}/(가공)$filename.json';
+      final extractjsonfilePath = '${jsondirectory.path}/(목차)$filename.json';
 
 
       //임시 파일을 실제 파일과 매핑
       File jsonfile = File(jsonfilePath);
       File sumjsonfile = File(sumjsonfilePath);
       File refinejsonfile = File(refinejsonfilePath);
+      File extractjsonfile = File(extractjsonfilePath);
 
       await refinejsonfile.writeAsBytes(refinebytes);
       await sumjsonfile.writeAsBytes(sumbytes);
       await jsonfile.writeAsBytes(bytes);
-
+      await extractjsonfile.writeAsBytes(extractbytes);
 
       final ref = FirebaseStorage.instance.ref().child('$pdfName'); // 파이어베이스에 pdf명으로 폴더 생성
 
@@ -118,6 +125,7 @@ class PDFUtils {
         ref.child('$pdfName.json').putFile(jsonfile),
         ref.child('(요약)$pdfName.json').putFile(sumjsonfile),
         ref.child('(가공)$pdfName.json').putFile(refinejsonfile),
+        ref.child('(목차)$pdfName.json').putFile(extractjsonfile),
       ]);
 
       //각 파일들의 다운로드 url 가져옴
@@ -126,9 +134,10 @@ class PDFUtils {
       final jsonurl = await ref.child('$pdfName.json').getDownloadURL();
       final sumjsonurl = await ref.child('(요약)$pdfName.json').getDownloadURL();
       final refinejsonurl = await ref.child('(가공)$pdfName.json').getDownloadURL();
+      final extractjsonurl = await ref.child('(목차)$pdfName.json').getDownloadURL();
 
       //최종적으로 db에 각 다운로드 링크, 파일 정보들을 업로드
-      createDoc(pdfName, file.path, pdfurl, titleimg, jsonurl, sumjsonurl, refinejsonurl); //pdf이름, 경로, 변환된 텍스트, 다운로드 url, 등록 시간을 firebase에 업로드
+      createDoc(pdfName, file.path, pdfurl, titleimg, jsonurl, sumjsonurl, refinejsonurl, extractjsonurl); //pdf이름, 경로, 변환된 텍스트, 다운로드 url, 등록 시간을 firebase에 업로드
 
       print("업로드 파일이름 : " + result.names.last.toString());
 
