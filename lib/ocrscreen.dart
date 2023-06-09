@@ -210,7 +210,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                     TextSpan(
                                       text: '$index. ',
                                       style: TextStyle(
-                                          fontSize: 30.0,
+                                          fontSize: 20.0,
                                           fontWeight: FontWeight.w900,
                                           color: Theme.of(context).colorScheme.onBackground
                                       ),
