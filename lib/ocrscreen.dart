@@ -198,6 +198,10 @@ class _OCRscreenState extends State<OCRscreen> {
                       itemBuilder: (BuildContext context, int index) {
                         return Column(
                           children: [
+                            Divider(),
+                            SizedBox(
+                              height: 2,
+                            ),
                             ExpansionTile(
                               backgroundColor: Colors.black,
                               initiallyExpanded: false,
@@ -266,8 +270,7 @@ class _OCRscreenState extends State<OCRscreen> {
                                             },
                                           ),
                                         ),
-                                      ),
-                                      const Divider(), // 구분선
+                                      ), // 구분선
                                     ],
                                   ),
                                 ),
